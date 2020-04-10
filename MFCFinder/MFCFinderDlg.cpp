@@ -45,19 +45,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CMFCFinderDlg message handlers
 
-BOOL CMFCFinderDlg::OnInitDialog()
-{
-	CDialog::OnInitDialog();
 
-	// Set the icon for this dialog.  The framework does this automatically
-	//  when the application's main window is not a dialog
-	SetIcon(m_hIcon, TRUE);			// Set big icon
-	SetIcon(m_hIcon, FALSE);		// Set small icon
-	
-	// TODO: Add extra initialization here
-	
-	return TRUE;  // return TRUE  unless you set the focus to a control
-}
 
 // If you add a minimize button to your dialog, you will need the code below
 //  to draw the icon.  For MFC applications using the document/view model,
@@ -1141,8 +1129,8 @@ CString GetMap(BYTE* data)
 		return _T("Signature标志错误");
 	}
 	PIMAGE_SECTION_HEADER section_header = IMAGE_FIRST_SECTION(nt_header);
-	ULONG codestart=0, codeend=0, rdatasize=0;
-	PULONG rdatastart = NULL;
+	ULONG codestart=0, codeend=0, rdatasize=0,datasize=0;
+	PULONG rdatastart = NULL;PULONG datastart = NULL;
 	for (i = 0; i < nt_header->FileHeader.NumberOfSections; i++)
 	{
 		if (!lstrcmpA( (PCHAR)&section_header[i].Name,".text"))
@@ -1155,14 +1143,19 @@ CString GetMap(BYTE* data)
 			rdatastart = (PULONG)(data + section_header[i].PointerToRawData);
 			rdatasize = section_header[i].SizeOfRawData /4;
 		}
+		if (!lstrcmpA((PCHAR)&section_header[i].Name, ".data"))
+		{
+			datastart = (PULONG)(data + section_header[i].PointerToRawData);
+			datasize = section_header[i].SizeOfRawData /4;
+		}
 	}
 	if (!codestart)
 	{
 		return _T("没有找到代码段.text");
 	}
-	if (!rdatastart)
+	if (!rdatastart || !datastart )
 	{
-		return _T("没有找到代码段.rdata");
+		return _T("没有找到代码段.rdata或.data");
 	}
 	CString ret = _T("");
 	i = 0;
@@ -1173,7 +1166,7 @@ CString GetMap(BYTE* data)
 		if (
 			rdatastart[i] > 0 &&
 			rdatastart[i] <= 1024 &&
-			rdatastart[i + 1] == 0 &&
+			//rdatastart[i + 1] == 0 &&
 			rdatastart[i + 4] >= 0 &&
 			rdatastart[i + 4] < 100 &&
 			rdatastart[i + 5] >= codestart &&
@@ -1191,6 +1184,33 @@ CString GetMap(BYTE* data)
 		}
 		i++;
 	}
+	i = 0;
+	oldi = -1;
+	tmp = _T("");
+	while (i < datasize)
+	{
+		if (
+			datastart[i] > 0 &&
+			datastart[i] <= 1024 &&
+			//rdatastart[i + 1] == 0 &&
+			datastart[i + 4] >= 0 &&
+			datastart[i + 4] < 100 &&
+			datastart[i + 5] >= codestart &&
+			datastart[i + 5] < codeend
+			)
+		{
+			if (oldi+6!=i && oldi!=-1)
+			{
+				tmp.Format(_T("----------------\r\n"));
+				ret+=tmp;
+			}
+			tmp.Format(_T("%08X:%s[%08X:%08X:%08X:%08X:%08X:%08X]\r\n"), datastart[i + 5], vmstr[datastart[i]], datastart[i], datastart[i+1], datastart[i+2], datastart[i+3], datastart[i+4], datastart[i+5]);
+			ret+=tmp;
+			oldi = i;
+		}
+		i++;
+	}
+
 	if (ret == _T(""))
 	{
 		ret = _T("可能不是MFC");
@@ -1222,4 +1242,16 @@ void CMFCFinderDlg::OnDropFiles(HDROP hDropInfo)
 		delete[] buffer;
 	}	
 	CDialog::OnDropFiles(hDropInfo);
+}
+BOOL CMFCFinderDlg::OnInitDialog()
+{
+	CDialog::OnInitDialog();
+
+	// Set the icon for this dialog.  The framework does this automatically
+	//  when the application's main window is not a dialog
+	SetIcon(m_hIcon, TRUE);			// Set big icon
+	SetIcon(m_hIcon, FALSE);		// Set small icon
+	
+	// TODO: Add extra initialization here
+	return TRUE;  // return TRUE  unless you set the focus to a control
 }

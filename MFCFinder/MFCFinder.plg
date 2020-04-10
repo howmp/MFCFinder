@@ -6,6 +6,9 @@
 --------------------Configuration: MFCFinder - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
+Creating command line "link.exe /nologo /subsystem:windows /incremental:no /pdb:"Release/MFCFinder.pdb" /machine:I386 /out:"Release/MFCFinder.exe"  .\Release\MFCFinder.obj .\Release\MFCFinderDlg.obj .\Release\StdAfx.obj .\Release\MFCFinder.res "
+<h3>Output Window</h3>
+Linking...
 
 
 

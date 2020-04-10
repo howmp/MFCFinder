@@ -36,5 +36,5 @@ VirtualFilter=dWC
 Type=1
 Class=CMFCFinderDlg
 ControlCount=1
-Control1=IDC_EDIT1,edit,1350637572
+Control1=IDC_EDIT1,edit,1352734788
 
